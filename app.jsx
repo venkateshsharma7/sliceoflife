@@ -238,6 +238,10 @@ function Header({ view, date, setDate, selectedDay, summary, askCoach }) {
 
   return (
     <header className="mb-6 flex flex-col gap-4 border-b border-line pb-5 md:flex-row md:items-end md:justify-between">
+      <div className="mobile-brand hidden items-center gap-2">
+        <img src="./assets/sliceoflife-icon.png" alt="" className="h-7 w-7 rounded-md object-cover" />
+        <span className="text-sm font-black tracking-tight">Slice of Life</span>
+      </div>
       <div>
         <p className="mb-2 text-xs font-black uppercase text-stone-500">Season starts Sep 7, 2026</p>
         <h2 className="text-4xl font-black tracking-normal text-ink md:text-5xl">{titles[view]}</h2>
