@@ -181,6 +181,58 @@
           margin-top: 0.55rem;
           font-size: 1.65rem;
         }
+        .dashboard-view > section:nth-child(2),
+        .dashboard-view > section:nth-child(3) {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dashboard-view > section:nth-child(2) > section:first-child .h-48 {
+          width: 8.5rem;
+          height: 8.5rem;
+        }
+        .dashboard-view > section:nth-child(2) > section:first-child .h-32 {
+          width: 5.75rem;
+          height: 5.75rem;
+        }
+        .dashboard-view > section:nth-child(2) > section:first-child svg {
+          height: 7rem;
+        }
+        .dashboard-view > section:nth-child(3) .space-y-3 {
+          display: grid;
+          gap: 0.65rem;
+        }
+        .dashboard-view > section:nth-child(3) .md\:grid-cols-3 {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0.55rem;
+        }
+        .habit-board {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.55rem;
+        }
+        .habit-board article {
+          padding: 0.7rem;
+        }
+        .habit-board article h3 {
+          font-size: 0.78rem;
+        }
+        .habit-board article > div:first-child {
+          margin-bottom: 0.65rem;
+        }
+        .habit-board article button {
+          height: 2rem;
+          font-size: 0.62rem;
+        }
+        .habit-rate-grid,
+        .rewards-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .review-table-wrap {
+          max-height: 62vh;
+          overscroll-behavior: contain;
+        }
+        .review-table-wrap table {
+          min-width: 700px;
+        }
       }
     </style>
   </head>

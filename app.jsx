@@ -287,7 +287,7 @@ function Dashboard({ summary, selectedDay, askCoach }) {
   const weak = summary.habitRates.slice(-6);
 
   return (
-    <div className="grid gap-4">
+    <div className="dashboard-view grid gap-4">
       <section className="app-metrics grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Metric label="Best day" value={summary.bestScore.toFixed(1)} detail="Highest daily score" />
         <Metric label="Average" value={summary.avgScore.toFixed(1)} detail={`${rank(summary.avgScore)} pace`} />
@@ -341,9 +341,9 @@ function Dashboard({ summary, selectedDay, askCoach }) {
 
 function Today({ selectedDay, setHabit, updateDay }) {
   return (
-    <section className="grid gap-4 xl:grid-cols-[1fr_360px]">
+      <section className="today-view grid gap-4 xl:grid-cols-[1fr_360px]">
       <Panel title="Daily board" action="23 habits">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="habit-board grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {HABITS.map((habit) => (
             <article key={habit.id} className="rounded-lg border border-line bg-white p-3">
               <div className="mb-3 flex items-start justify-between gap-3">
@@ -440,7 +440,7 @@ function Habits({ summary, filter, setFilter }) {
           </button>
         ))}
       </div>
-      <div className="grid gap-3 xl:grid-cols-2">
+      <div className="habit-rate-grid grid gap-3 xl:grid-cols-2">
         {rows.map((item) => (
           <div key={item.name} className="rounded-lg border border-line bg-white p-3">
             <div className="mb-2 flex justify-between gap-4">
@@ -520,7 +520,7 @@ function Coach({ messages, askCoach, config }) {
 function Review({ rows }) {
   return (
     <Panel title="Weekly breakdown" action="weeks 1-4">
-      <div className="overflow-auto">
+      <div className="review-table-wrap max-h-[70vh] overflow-auto">
         <table className="w-full min-w-[840px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase text-stone-500">
@@ -558,12 +558,12 @@ function Review({ rows }) {
 
 function Rewards({ avg }) {
   return (
-    <div className="grid gap-4">
+    <div className="rewards-view grid gap-4">
       <Panel title="Current unlock" action={rank(avg)}>
         <div className="text-5xl font-black">{avg.toFixed(1)}</div>
         <p className="mt-2 text-sm text-stone-600">Monthly average score controls the reward. The app keeps rewards earned, not impulsive.</p>
       </Panel>
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <section className="rewards-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {REWARDS.map(([tier, score, detail]) => (
           <article key={tier} className="rounded-lg border border-line bg-white p-4 shadow-sm">
             <div className="mb-2 flex justify-between">
