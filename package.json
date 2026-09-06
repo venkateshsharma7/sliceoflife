@@ -1,0 +1,17 @@
+{
+  "name": "slice-life-ai-app",
+  "version": "1.0.0",
+  "description": "A professional AI-powered habit, wellness, study, and lifestyle tracker inspired by the Slice of Life workbook.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "habit-tracker",
+    "gemini",
+    "productivity",
+    "wellness"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slice of Life AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-ink: #151917;
+        --color-fog: #f4f5f1;
+        --color-paper: #fffefa;
+        --color-line: #e4e0d6;
+        --color-moss: #46624a;
+        --color-lake: #315f72;
+        --color-clay: #a45d45;
+        --color-amber: #b67b2a;
+      }
+      body {
+        background:
+          linear-gradient(120deg, rgba(70, 98, 74, 0.08), transparent 36%),
+          linear-gradient(180deg, #f7f7f2 0%, #eeeee7 100%);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+      fetch("./app.jsx")
+        .then((response) => response.text())
+        .then((source) => {
+          const compiled = Babel.transform(source, {
+            presets: [[Babel.availablePresets.react, { runtime: "classic" }]],
+          }).code;
+          (0, eval)(compiled);
+        })
+        .catch((error) => console.error("Unable to load the React app.", error));
+    </script>
+  </body>
+</html>
