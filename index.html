@@ -8,23 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
       @theme {
-        --color-ink: #151917;
-        --color-fog: #f4f5f1;
-        --color-paper: #fffefa;
-        --color-line: #e4e0d6;
-        --color-moss: #46624a;
-        --color-lake: #315f72;
-        --color-clay: #a45d45;
-        --color-amber: #b67b2a;
+        --color-ink: #f2f4f5;
+        --color-fog: #171a1e;
+        --color-paper: #101214;
+        --color-line: #2c3137;
+        --color-moss: #6f9d78;
+        --color-lake: #6c9db2;
+        --color-clay: #cf765e;
+        --color-amber: #d6a04d;
       }
       body {
         position: relative;
         min-height: 100vh;
         overflow-x: hidden;
         background:
-          radial-gradient(circle at 92% -8%, rgba(180, 35, 50, 0.16), transparent 28%),
-          radial-gradient(circle at 8% 18%, rgba(49, 95, 114, 0.13), transparent 26%),
-          linear-gradient(135deg, #f8f8f5 0%, #e9ebea 48%, #dfe3e2 100%);
+          radial-gradient(circle at 88% -12%, rgba(180, 35, 50, 0.22), transparent 30%),
+          radial-gradient(circle at 5% 12%, rgba(49, 95, 114, 0.2), transparent 28%),
+          linear-gradient(135deg, #090a0c 0%, #111417 52%, #181c20 100%);
         background-attachment: fixed;
       }
       body::before {
@@ -34,9 +34,9 @@
         content: "";
         pointer-events: none;
         background:
-          linear-gradient(115deg, rgba(255, 255, 255, 0.62), transparent 34%),
-          linear-gradient(rgba(21, 25, 23, 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(21, 25, 23, 0.035) 1px, transparent 1px);
+          linear-gradient(115deg, rgba(255, 255, 255, 0.06), transparent 34%),
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
         background-size: auto, 72px 72px, 72px 72px;
         mask-image: linear-gradient(to bottom, black, transparent 88%);
       }
@@ -49,12 +49,39 @@
         z-index: -1;
         content: "";
         pointer-events: none;
-        border: 1px solid rgba(255, 255, 255, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 999px;
         box-shadow:
-          0 0 0 1.5rem rgba(255, 255, 255, 0.12),
-          0 0 5rem rgba(180, 35, 50, 0.08);
+          0 0 0 1.5rem rgba(255, 255, 255, 0.025),
+          0 0 5rem rgba(180, 35, 50, 0.14);
         opacity: 0.7;
+      }
+      .text-ink {
+        color: #f2f4f5 !important;
+      }
+      .bg-ink.text-white {
+        color: #090a0c !important;
+      }
+      [class*="bg-white"] {
+        background-color: rgba(255, 255, 255, 0.045) !important;
+      }
+      [class*="text-stone-500"] {
+        color: #8f989f !important;
+      }
+      [class*="text-stone-600"] {
+        color: #aeb6bc !important;
+      }
+      [class*="text-stone-700"] {
+        color: #c8cdd1 !important;
+      }
+      input,
+      textarea {
+        color: #f2f4f5;
+        caret-color: #cf4050;
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: #737c83;
       }
     </style>
   </head>
