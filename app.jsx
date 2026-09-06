@@ -27,12 +27,12 @@ const HABITS = [
 ].map(([name, category]) => ({ id: slug(name), name, category }));
 
 const NAV = [
-  ["dashboard", "Dashboard", "D"],
-  ["today", "Today", "T"],
-  ["habits", "Habits", "H"],
-  ["coach", "Coach", "AI"],
-  ["review", "Review", "R"],
-  ["rewards", "Rewards", "W"],
+  ["dashboard", "Dashboard", "dashboard"],
+  ["today", "Today", "check"],
+  ["habits", "Habits", "grid"],
+  ["coach", "Coach", "spark"],
+  ["review", "Review", "chart"],
+  ["rewards", "Rewards", "gift"],
 ];
 
 const REWARDS = [
@@ -184,7 +184,7 @@ function App() {
                     view === id ? "bg-white/15 text-white" : "bg-stone-100 text-stone-700"
                   }`}
                 >
-                  {icon}
+                  <NavIcon name={icon} />
                 </span>
                 {label}
               </button>
@@ -264,6 +264,22 @@ function Header({ view, date, setDate, selectedDay, summary, askCoach }) {
         </button>
       </div>
     </header>
+  );
+}
+
+function NavIcon({ name }) {
+  const paths = {
+    dashboard: "M4 13h6V4H4v9Zm10 7h6v-9h-6v9ZM4 20h6v-3H4v3Zm10-12h6V4h-6v4Z",
+    check: "m5 12 4 4L19 6",
+    grid: "M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z",
+    spark: "m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm6 14 .8 2.2L21 20l-2.2.8L18 23l-.8-2.2L15 20l2.2-.8L18 17Z",
+    chart: "M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7",
+    gift: "M20 12v8H4v-8m-1-4h18v4H3V8Zm9 0v12M12 8H8.5a2.5 2.5 0 1 1 0-5C11 3 12 8 12 8Zm0 0h3.5a2.5 2.5 0 1 0 0-5C13 3 12 8 12 8Z",
+  };
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={paths[name]} />
+    </svg>
   );
 }
 
