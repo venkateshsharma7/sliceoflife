@@ -3,4 +3,5 @@ node_modules/
 .chrome-test*/
 .edge-*/
 *.png
+!assets/sliceoflife-icon.png
 .DS_Store

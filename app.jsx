@@ -159,17 +159,11 @@ function App() {
       <div className="mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 lg:grid-cols-[268px_1fr]">
         <aside className="border-line/90 bg-paper/80 p-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:border-r">
           <div className="mb-7 flex items-center gap-3 rounded-lg border border-line bg-white/70 p-3">
-            <div className="grid h-11 w-11 place-items-center rounded-md bg-ink text-white" aria-label="Slice of Life mark">
-              <svg viewBox="0 0 48 48" className="h-8 w-8" role="img" aria-hidden="true">
-                <circle cx="24" cy="24" r="16.5" fill="#f8f7f1" />
-                <path d="M24 12.8c-1.6 3-6.1 7.7-6.1 12.1a6.1 6.1 0 0 0 12.2 0c0-4.4-4.5-9.1-6.1-12.1Z" fill="#b42332" />
-                <path d="m11 36.5 24.5-25" fill="none" stroke="#151917" strokeLinecap="round" strokeWidth="3.2" />
-                <path d="m13.4 36.5 22.1-22.6" fill="none" stroke="#d7d4ca" strokeLinecap="round" strokeWidth="1.2" />
-                <circle cx="13" cy="13" r="1.8" fill="#b42332" />
-                <circle cx="36.5" cy="35.2" r="1.4" fill="#b42332" />
-                <circle cx="38" cy="13.2" r="1" fill="#b42332" />
-              </svg>
-            </div>
+            <img
+              src="./assets/sliceoflife-icon.png"
+              alt="Slice of Life mark"
+              className="h-11 w-11 rounded-md object-cover"
+            />
             <div>
               <h1 className="text-lg font-black tracking-normal">Slice of Life</h1>
               <p className="text-xs font-medium text-stone-500">Personal operating system</p>
