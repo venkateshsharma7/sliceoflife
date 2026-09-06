@@ -157,7 +157,7 @@ function App() {
   return (
     <div className="min-h-screen text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 lg:grid-cols-[268px_1fr]">
-        <aside className="border-line/90 bg-paper/80 p-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:border-r">
+        <aside className="app-sidebar border-line/90 bg-paper/80 p-4 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:border-r">
           <div className="mb-7 flex items-center gap-3 rounded-lg border border-line bg-white/70 p-3">
             <img
               src="./assets/sliceoflife-icon.png"
@@ -170,7 +170,7 @@ function App() {
             </div>
           </div>
 
-          <nav className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+          <nav className="app-nav grid grid-cols-2 gap-2 lg:grid-cols-1">
             {NAV.map(([id, label, icon]) => (
               <button
                 key={id}
@@ -191,7 +191,7 @@ function App() {
             ))}
           </nav>
 
-          <div className="mt-7 rounded-lg border border-line bg-white/75 p-3">
+          <div className="app-gemini mt-7 rounded-lg border border-line bg-white/75 p-3">
             <div className="mb-3 flex items-center justify-between">
               <span className="text-xs font-black uppercase text-stone-500">Gemini</span>
               <span className={`h-2.5 w-2.5 rounded-full ${config.hasGeminiKey ? "bg-moss" : "bg-amber"}`} />
@@ -201,7 +201,7 @@ function App() {
             </p>
           </div>
 
-          <div className="mt-3 grid gap-2">
+          <div className="app-data-actions mt-3 grid gap-2">
             <button onClick={exportData} className="h-10 rounded-md border border-line bg-white text-sm font-bold">
               Export JSON
             </button>
@@ -268,7 +268,7 @@ function Dashboard({ summary, selectedDay, askCoach }) {
 
   return (
     <div className="grid gap-4">
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="app-metrics grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Metric label="Best day" value={summary.bestScore.toFixed(1)} detail="Highest daily score" />
         <Metric label="Average" value={summary.avgScore.toFixed(1)} detail={`${rank(summary.avgScore)} pace`} />
         <Metric label="Spend" value={`Rs ${summary.totalSpend}`} detail="Budget awareness" />

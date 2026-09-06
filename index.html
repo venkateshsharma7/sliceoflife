@@ -83,6 +83,74 @@
       textarea::placeholder {
         color: #737c83;
       }
+      @media (max-width: 639px) {
+        .app-sidebar {
+          padding: 0.75rem;
+          border-bottom: 1px solid #2c3137;
+        }
+        .app-sidebar > div:first-child {
+          margin-bottom: 0.75rem;
+          padding: 0.65rem;
+        }
+        .app-sidebar > div:first-child img {
+          height: 2.25rem;
+          width: 2.25rem;
+        }
+        .app-sidebar > div:first-child h1 {
+          font-size: 0.95rem;
+        }
+        .app-sidebar > div:first-child p {
+          font-size: 0.65rem;
+        }
+        .app-nav {
+          display: flex;
+          gap: 0.45rem;
+          overflow-x: auto;
+          padding-bottom: 0.2rem;
+          scrollbar-width: none;
+        }
+        .app-nav::-webkit-scrollbar {
+          display: none;
+        }
+        .app-nav button {
+          min-width: max-content;
+          height: 2.25rem;
+          padding: 0 0.65rem;
+          font-size: 0.72rem;
+        }
+        .app-nav button span {
+          height: 1.45rem;
+          width: 1.45rem;
+          font-size: 0.62rem;
+        }
+        .app-gemini {
+          display: none;
+        }
+        .app-data-actions {
+          display: flex;
+          gap: 0.45rem;
+          margin-top: 0.7rem;
+        }
+        .app-data-actions button,
+        .app-data-actions label {
+          flex: 1;
+          height: 2.15rem;
+          font-size: 0.68rem;
+        }
+        main {
+          padding: 1rem !important;
+        }
+        .app-metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .app-metrics article {
+          padding: 0.8rem;
+        }
+        .app-metrics article > div {
+          margin-top: 0.55rem;
+          font-size: 1.65rem;
+        }
+      }
     </style>
   </head>
   <body>
