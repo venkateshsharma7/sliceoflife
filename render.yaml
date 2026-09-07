@@ -14,3 +14,9 @@ services:
         sync: false
       - key: MONGODB_DATABASE
         value: sliceoflife
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+      - key: CLOUDFLARE_IMAGE_MODEL
+        value: "@cf/black-forest-labs/flux-1-schnell"

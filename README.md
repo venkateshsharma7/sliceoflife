@@ -44,6 +44,8 @@ MONGODB_DATABASE=sliceoflife
 
 When MongoDB is connected, create an account to keep your tracker private. The app restores your account data at sign-in and saves changes shortly after every edit, on every device where you sign in.
 
+For fresh AI-generated daily verdict portraits, optionally add `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` to Render. The app uses Cloudflare Workers AI with `@cf/black-forest-labs/flux-1-schnell`; the Workers Free plan includes a daily allocation, so it is a free quota rather than unlimited generation.
+
 Then open:
 
 ```text

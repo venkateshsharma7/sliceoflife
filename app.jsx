@@ -650,7 +650,9 @@ function DailyJudgment({ day, judging, status }) {
   return (
     <section className={`overflow-hidden rounded-lg border bg-gradient-to-br ${colors[tone]}`}>
       <div className="grid min-h-52 grid-cols-[132px_1fr] gap-3 p-4">
-        <JudgmentPortrait tone={tone} />
+        {judgment?.imageDataUrl
+          ? <img src={judgment.imageDataUrl} alt="AI-generated daily analyst portrait" className="h-full min-h-44 w-full rounded-md object-cover" />
+          : <JudgmentPortrait tone={tone} />}
         <div className="min-w-0 self-center">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-white/60">Daily judgment</p>
           <h3 className="mt-2 text-xl font-black leading-6 text-white">{judging ? "Reading the evidence..." : judgment?.title || "The day awaits a record."}</h3>

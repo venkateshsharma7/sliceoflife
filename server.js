@@ -13,6 +13,9 @@ const port = Number(process.env.PORT || 5173);
 const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const mongoUri = process.env.MONGODB_URI;
 const mongoDatabase = process.env.MONGODB_DATABASE || "sliceoflife";
+const cloudflareAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+const cloudflareApiToken = process.env.CLOUDFLARE_API_TOKEN;
+const cloudflareImageModel = process.env.CLOUDFLARE_IMAGE_MODEL || "@cf/black-forest-labs/flux-1-schnell";
 let mongoClient;
 let mongoPromise;
 const scrypt = promisify(scryptCallback);
@@ -176,7 +179,42 @@ async function handleJudgment(req, res) {
     return;
   }
   const text = result?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim();
-  sendJson(res, { judgment: parseJudgment(text), model });
+  const judgment = parseJudgment(text);
+  judgment.imageDataUrl = await generateJudgmentImage(judgment);
+  sendJson(res, { judgment, model, imageEnabled: Boolean(cloudflareAccountId && cloudflareApiToken) });
+}
+
+async function generateJudgmentImage(judgment) {
+  if (!cloudflareAccountId || !cloudflareApiToken) return null;
+  const prompt = [
+    "Original fictional night-shift analyst portrait for a premium habit tracker.",
+    "Cinematic noir editorial photography, restrained forensic office, charcoal coat, serious observant expression, dramatic side lighting, rich film grain, deep shadow, warm practical lamp, modern premium app artwork.",
+    `Emotional direction: ${judgment.title}. ${judgment.line}`,
+    "No celebrity, no existing fictional character, no resemblance to a real person, no weapons, no text, no logos, no watermark.",
+  ].join(" ");
+  try {
+    const modelPath = cloudflareImageModel.split("/").map(encodeURIComponent).join("/");
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/run/${modelPath}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cloudflareApiToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, steps: 4, seed: Math.floor(Math.random() * 2_000_000_000) }),
+    });
+    if (!response.ok) {
+      console.error("Daily image generation is unavailable:", response.status, await response.text());
+      return null;
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const payload = await response.json();
+      const image = payload?.result?.image || payload?.image;
+      return image ? `data:image/jpeg;base64,${image}` : null;
+    }
+    const image = Buffer.from(await response.arrayBuffer()).toString("base64");
+    return image ? `data:image/jpeg;base64,${image}` : null;
+  } catch (error) {
+    console.error("Daily image generation failed:", error.message);
+    return null;
+  }
 }
 
 async function handleRegister(req, res) {
