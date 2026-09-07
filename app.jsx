@@ -45,11 +45,107 @@ const REWARDS = [
 ];
 
 function App() {
+  const [auth, setAuth] = useState({ loading: true, token: localStorage.getItem("slice-life-ai:session-token"), user: null });
+
+  useEffect(() => {
+    if (!auth.token) {
+      setAuth({ loading: false, token: null, user: null });
+      return;
+    }
+    fetch("/api/auth/session", { headers: { Authorization: `Bearer ${auth.token}` } })
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((payload) => setAuth({ loading: false, token: auth.token, user: payload.user }))
+      .catch(() => {
+        localStorage.removeItem("slice-life-ai:session-token");
+        setAuth({ loading: false, token: null, user: null });
+      });
+  }, [auth.token]);
+
+  function completeAuth(payload) {
+    localStorage.setItem("slice-life-ai:session-token", payload.token);
+    setAuth({ loading: false, token: payload.token, user: payload.user });
+  }
+
+  function signOut() {
+    if (auth.token) fetch("/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${auth.token}` } });
+    localStorage.removeItem("slice-life-ai:session-token");
+    setAuth({ loading: false, token: null, user: null });
+  }
+
+  if (auth.loading) return <AuthLoading />;
+  if (!auth.user) return <AuthScreen onAuthenticated={completeAuth} />;
+  return <TrackerApp key={auth.user.id} auth={auth} onSignOut={signOut} />;
+}
+
+function AuthLoading() {
+  return <div className="grid min-h-screen place-items-center text-sm font-black text-stone-500">Loading your workspace...</div>;
+}
+
+function AuthScreen({ onAuthenticated }) {
+  const [mode, setMode] = useState("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setStatus("");
+    try {
+      const response = await fetch(`/api/auth/${mode === "login" ? "login" : "register"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Unable to continue.");
+      onAuthenticated(payload);
+    } catch (error) {
+      setStatus(error.message || "Unable to continue.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const registering = mode === "register";
+  return (
+    <main className="mx-auto grid min-h-screen max-w-[1180px] items-center gap-10 px-5 py-10 lg:grid-cols-[1.15fr_.85fr] lg:px-10">
+      <section className="max-w-xl">
+        <div className="mb-8 flex items-center gap-3">
+          <img src="./assets/sliceoflife-icon.png" alt="Slice of Life" className="h-12 w-12 rounded-lg" />
+          <div><h1 className="text-xl font-black">Slice of Life</h1><p className="text-sm text-stone-500">Your personal operating system</p></div>
+        </div>
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-clay">Personal progress, properly kept</p>
+        <h2 className="mt-4 text-5xl font-black leading-[1.02] text-ink sm:text-6xl">One life.<br />A clearer record.</h2>
+        <p className="mt-6 max-w-md text-base leading-7 text-stone-600">Track habits, recovery, study, and spending in one focused place. Your account keeps your progress available wherever you sign in.</p>
+        <div className="mt-10 grid grid-cols-3 gap-3 text-xs font-bold text-stone-500"><span>PRIVATE ACCOUNT</span><span>LIVE SYNC</span><span>AI COACH</span></div>
+      </section>
+
+      <section className="rounded-xl border border-line bg-paper/90 p-5 shadow-2xl shadow-black/20 sm:p-8">
+        <div className="mb-7 flex rounded-md border border-line bg-fog p-1">
+          {["login", "register"].map((option) => <button key={option} onClick={() => { setMode(option); setStatus(""); }} className={`h-10 flex-1 rounded text-sm font-black capitalize ${mode === option ? "bg-white text-ink shadow-sm" : "text-stone-500"}`}>{option === "login" ? "Sign in" : "Create account"}</button>)}
+        </div>
+        <h3 className="text-2xl font-black">{registering ? "Create your account" : "Welcome back"}</h3>
+        <p className="mt-2 text-sm text-stone-500">{registering ? "Your tracker will follow you across devices." : "Sign in to pick up exactly where you left off."}</p>
+        <form onSubmit={submit} className="mt-7 grid gap-4">
+          {registering && <label className="grid gap-2 text-sm font-bold">Name<input required value={name} onChange={(event) => setName(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="Your name" /></label>}
+          <label className="grid gap-2 text-sm font-bold">Email<input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="you@example.com" /></label>
+          <label className="grid gap-2 text-sm font-bold">Password<input required minLength="8" type="password" autoComplete={registering ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="At least 8 characters" /></label>
+          {status && <p className="rounded-md border border-clay/40 bg-clay/10 p-3 text-sm text-clay">{status}</p>}
+          <button disabled={busy} className="mt-2 h-12 rounded-md bg-ink text-sm font-black text-white disabled:opacity-60">{busy ? "Please wait..." : registering ? "Create account" : "Sign in"}</button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function TrackerApp({ auth, onSignOut }) {
   const [view, setView] = useState("dashboard");
   const [date, setDate] = useState("2026-09-07");
-  const [data, setData] = useState(loadData);
+  const [data, setData] = useState(() => loadDataForUser(auth.user.id));
   const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
-  const [deviceSyncCode] = useState(getDeviceSyncCode);
   const [cloudReady, setCloudReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Checking cloud backup...");
   const [filter, setFilter] = useState("All");
@@ -61,8 +157,8 @@ function App() {
   ]);
 
   useEffect(() => {
-    localStorage.setItem("slice-life-ai:react-v2", JSON.stringify(data));
-  }, [data]);
+    localStorage.setItem(`slice-life-ai:tracker:${auth.user.id}`, JSON.stringify(data));
+  }, [auth.user.id, data]);
 
   useEffect(() => {
     let active = true;
@@ -97,10 +193,8 @@ function App() {
     async function restoreCloudData() {
       setSyncStatus("Syncing your tracker...");
       try {
-        const response = await fetch("/api/sync/load", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ syncCode: deviceSyncCode }),
+        const response = await fetch("/api/tracker", {
+          headers: { Authorization: `Bearer ${auth.token}` },
         });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || "Cloud sync failed.");
@@ -117,29 +211,37 @@ function App() {
     return () => {
       active = false;
     };
-  }, [config.hasMongo, deviceSyncCode]);
+  }, [auth.token, config.hasMongo]);
 
   useEffect(() => {
     if (!cloudReady || config.hasMongo !== true) return;
 
     const saveTimer = window.setTimeout(async () => {
-      setSyncStatus("Saving changes...");
-      try {
-        const response = await fetch("/api/sync", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ syncCode: deviceSyncCode, data }),
-        });
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || "Cloud save failed.");
-        setSyncStatus(`Saved ${formatSavedAt(payload.savedAt)}.`);
-      } catch (error) {
-        setSyncStatus(error.message || "Cloud save failed.");
-      }
+      await saveToCloud(data);
     }, 900);
 
     return () => window.clearTimeout(saveTimer);
-  }, [cloudReady, config.hasMongo, data, deviceSyncCode]);
+  }, [auth.token, cloudReady, config.hasMongo, data]);
+
+  async function saveToCloud(dataToSave = data) {
+    if (!cloudReady || config.hasMongo !== true) {
+      setSyncStatus("Cloud backup is unavailable.");
+      return;
+    }
+    setSyncStatus("Saving changes...");
+    try {
+      const response = await fetch("/api/tracker", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ data: dataToSave }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Cloud save failed.");
+      setSyncStatus(`Saved ${formatSavedAt(payload.savedAt)}.`);
+    } catch (error) {
+      setSyncStatus(error.message || "Cloud save failed.");
+    }
+  }
 
   const selectedDay = useMemo(() => ensureDay(data, date), [data, date]);
   const summary = useMemo(() => summarize(data, selectedDay), [data, selectedDay]);
@@ -191,7 +293,7 @@ function App() {
     try {
       const res = await fetch("/api/coach", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
           message: text,
           summary,
@@ -278,6 +380,12 @@ function App() {
             </p>
           </div>
 
+          <div className="app-account mt-3 rounded-lg border border-line bg-white/75 p-3">
+            <p className="truncate text-sm font-black">{auth.user.name}</p>
+            <p className="mt-1 truncate text-xs text-stone-500">{auth.user.email}</p>
+            <button onClick={onSignOut} className="mt-3 text-xs font-black text-stone-500 hover:text-white">Sign out</button>
+          </div>
+
           <div className="app-data-actions mt-3 grid gap-2">
             <button onClick={exportData} className="h-10 rounded-md border border-line bg-white text-sm font-bold">
               Export JSON
@@ -293,11 +401,14 @@ function App() {
               <span className={`h-2.5 w-2.5 rounded-full ${cloudReady ? "bg-moss" : "bg-amber"}`} />
             </div>
             <p className="text-xs leading-5 text-stone-600">{syncStatus}</p>
+            <button onClick={() => saveToCloud()} className="mt-3 h-9 w-full rounded-md border border-line bg-white text-xs font-black">
+              Save now
+            </button>
           </div>
         </aside>
 
         <main className="min-w-0 p-4 sm:p-6 lg:p-8">
-          <Header view={view} date={date} setDate={chooseDate} selectedDay={selectedDay} summary={summary} askCoach={askCoach} />
+          <Header view={view} date={date} setDate={chooseDate} selectedDay={selectedDay} summary={summary} askCoach={askCoach} onSave={() => saveToCloud()} />
           {view === "dashboard" && <Dashboard summary={summary} selectedDay={selectedDay} askCoach={askCoach} />}
           {view === "today" && <Today selectedDay={selectedDay} setHabit={setHabit} updateDay={updateDay} />}
           {view === "habits" && <Habits summary={summary} filter={filter} setFilter={setFilter} />}
@@ -310,7 +421,7 @@ function App() {
   );
 }
 
-function Header({ view, date, setDate, selectedDay, summary, askCoach }) {
+function Header({ view, date, setDate, selectedDay, summary, askCoach, onSave }) {
   const titles = {
     dashboard: "Dashboard",
     today: "Today check-in",
@@ -340,6 +451,12 @@ function Header({ view, date, setDate, selectedDay, summary, askCoach }) {
           onChange={(event) => setDate(event.target.value)}
           className="h-11 rounded-md border border-line bg-white px-3 text-sm font-bold"
         />
+        <button
+          onClick={onSave}
+          className="h-11 rounded-md border border-line bg-white px-4 text-sm font-black"
+        >
+          Save
+        </button>
         <button
           onClick={() => askCoach("Build my exact plan for the next 24 hours.")}
           className="h-11 rounded-md bg-ink px-4 text-sm font-black text-white"
