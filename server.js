@@ -88,6 +88,11 @@ createServer(async (req, res) => {
       return;
     }
 
+    if (url.pathname === "/api/cloudflare/test-image" && req.method === "POST") {
+      await handleCloudflareTestImage(req, res);
+      return;
+    }
+
     await serveStatic(url.pathname, res);
   } catch (error) {
     console.error(error);
@@ -186,12 +191,14 @@ async function handleJudgment(req, res) {
   }
   const text = result?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("").trim();
   const judgment = parseJudgment(text);
-  judgment.imageDataUrl = await generateJudgmentImage(judgment);
+  const { imageDataUrl, imageError } = await generateJudgmentImage(judgment);
+  judgment.imageDataUrl = imageDataUrl;
+  if (imageError) judgment.imageError = imageError;
   sendJson(res, { judgment, model, imageEnabled: Boolean(cloudflareAccountId && cloudflareApiToken) });
 }
 
 async function generateJudgmentImage(judgment) {
-  if (!cloudflareAccountId || !cloudflareApiToken) return null;
+  if (!cloudflareAccountId || !cloudflareApiToken) return { imageDataUrl: null, imageError: null };
   const prompt = [
     "Original fictional night-shift analyst portrait for a premium habit tracker.",
     "Cinematic noir editorial photography, restrained forensic office, charcoal coat, serious observant expression, dramatic side lighting, rich film grain, deep shadow, warm practical lamp, modern premium app artwork.",
@@ -206,21 +213,45 @@ async function generateJudgmentImage(judgment) {
       body: JSON.stringify({ prompt, steps: 4, seed: Math.floor(Math.random() * 2_000_000_000) }),
     });
     if (!response.ok) {
-      console.error("Daily image generation is unavailable:", response.status, await response.text());
-      return null;
+      const body = await response.text();
+      console.error("Daily image generation is unavailable:", response.status, body);
+      return { imageDataUrl: null, imageError: describeCloudflareFailure(response.status, body) };
     }
     const contentType = response.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
       const payload = await response.json();
       const image = payload?.result?.image || payload?.image;
-      return image ? `data:image/jpeg;base64,${image}` : null;
+      if (image) return { imageDataUrl: `data:image/jpeg;base64,${image}`, imageError: null };
+      const detail = payload?.errors?.[0]?.message;
+      return { imageDataUrl: null, imageError: detail || "Cloudflare returned a response with no image data." };
     }
     const image = Buffer.from(await response.arrayBuffer()).toString("base64");
-    return image ? `data:image/jpeg;base64,${image}` : null;
+    return image
+      ? { imageDataUrl: `data:image/jpeg;base64,${image}`, imageError: null }
+      : { imageDataUrl: null, imageError: "Cloudflare returned an empty image." };
   } catch (error) {
     console.error("Daily image generation failed:", error.message);
-    return null;
+    return { imageDataUrl: null, imageError: error.message || "Could not reach Cloudflare." };
   }
+}
+
+function describeCloudflareFailure(status, rawBody) {
+  let detail;
+  try {
+    detail = JSON.parse(rawBody)?.errors?.[0]?.message;
+  } catch {
+    detail = null;
+  }
+  if (status === 403 || status === 401) {
+    return (
+      detail ||
+      "Cloudflare rejected the request (401/403). Your API token can read models but likely lacks the 'Workers AI - Edit' permission needed to actually run one. Re-create the token with both Workers AI Read and Edit."
+    );
+  }
+  if (status === 429) {
+    return detail || "Cloudflare rate-limited or quota-limited the request. The Workers AI free plan has a daily image generation allowance.";
+  }
+  return detail || `Cloudflare returned status ${status}.`;
 }
 
 async function handleCloudflareStatus(req, res) {
@@ -264,6 +295,24 @@ async function handleCloudflareStatus(req, res) {
       message: `Could not reach Cloudflare: ${error.message || "unknown network error"}.`,
     });
   }
+}
+
+async function handleCloudflareTestImage(req, res) {
+  const user = await requireUser(req, res);
+  if (!user) return;
+  if (!cloudflareAccountId || !cloudflareApiToken) {
+    sendJson(res, { working: false, message: "Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN first." }, 400);
+    return;
+  }
+  const { imageDataUrl, imageError } = await generateJudgmentImage({
+    title: "Connection test",
+    line: "A short verification portrait requested from the Cloudflare AI status panel.",
+  });
+  if (imageError) {
+    sendJson(res, { working: false, message: imageError });
+    return;
+  }
+  sendJson(res, { working: true, message: "Cloudflare generated a real test image successfully.", imageDataUrl });
 }
 
 async function handleRegister(req, res) {

@@ -300,6 +300,23 @@ function TrackerApp({ auth, onSignOut }) {
     }
   }
 
+  async function testCloudflareImage() {
+    setCloudflareCheck({ state: "checking", message: "Generating a real test image (uses one generation)..." });
+    try {
+      const response = await fetch("/api/cloudflare/test-image", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${auth.token}` },
+      });
+      const payload = await response.json();
+      setCloudflareCheck({
+        state: payload.working ? "working" : "broken",
+        message: payload.message || (payload.working ? "Generated successfully." : "Generation failed."),
+      });
+    } catch (error) {
+      setCloudflareCheck({ state: "broken", message: error.message || "Could not reach the local server." });
+    }
+  }
+
   async function saveDailyNotes() {
     setJudging(true);
     setJudgmentStatus("Reviewing your day...");
@@ -455,8 +472,18 @@ function TrackerApp({ auth, onSignOut }) {
               disabled={cloudflareCheck.state === "checking"}
               className="mt-3 h-9 w-full rounded-md border border-line bg-white text-xs font-black disabled:opacity-60"
             >
-              {cloudflareCheck.state === "checking" ? "Checking..." : "Test connection"}
+              {cloudflareCheck.state === "checking" ? "Checking..." : "Check credentials"}
             </button>
+            <button
+              onClick={testCloudflareImage}
+              disabled={cloudflareCheck.state === "checking" || !config.hasCloudflareKeys}
+              className="mt-2 h-9 w-full rounded-md bg-ink text-xs font-black text-white disabled:opacity-60"
+            >
+              Send real test image
+            </button>
+            <p className="mt-2 text-[0.65rem] leading-4 text-stone-500">
+              "Check credentials" is free. "Send real test image" spends one Workers AI generation, and is the only way to confirm the token can actually create portraits, not just read the model list.
+            </p>
           </div>
 
           <div className="app-account mt-3 rounded-lg border border-line bg-white/75 p-3">
@@ -706,6 +733,9 @@ function DailyJudgment({ day, judging, status }) {
           <h3 className="mt-2 text-xl font-black leading-6 text-white">{judging ? "Reading the evidence..." : judgment?.title || "The day awaits a record."}</h3>
           <p className="mt-3 text-sm leading-6 text-white/75">{judging ? "Notes, habits, screen time, and spend are being reviewed." : judgment?.line || "Save your notes when the day is ready. Your verdict will stay with this calendar date."}</p>
           {(judgment || status) && <p className="mt-3 text-xs font-bold text-white/55">{judgment ? `Recorded ${formatSavedAt(judgment.createdAt)}` : status}</p>}
+          {judgment?.imageError && !judgment?.imageDataUrl && (
+            <p className="mt-2 text-xs leading-5 text-clay">Portrait unavailable: {judgment.imageError}</p>
+          )}
         </div>
       </div>
     </section>
