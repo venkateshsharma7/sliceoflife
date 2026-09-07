@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node server.js"
   },
+  "dependencies": {
+    "mongodb": "^6.17.0"
+  },
   "keywords": [
     "habit-tracker",
     "gemini",

@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +10,10 @@ loadDotEnv();
 
 const port = Number(process.env.PORT || 5173);
 const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const mongoUri = process.env.MONGODB_URI;
+const mongoDatabase = process.env.MONGODB_DATABASE || "sliceoflife";
+let mongoClient;
+let mongoPromise;
 
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -28,7 +33,21 @@ createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/config" && req.method === "GET") {
-      sendJson(res, { hasGeminiKey: Boolean(process.env.GEMINI_API_KEY), model });
+      sendJson(res, {
+        hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+        hasMongo: Boolean(mongoUri),
+        model,
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/sync/load" && req.method === "POST") {
+      await handleSyncGet(req, res);
+      return;
+    }
+
+    if (url.pathname === "/api/sync" && req.method === "PUT") {
+      await handleSyncPut(req, res);
       return;
     }
 
@@ -96,6 +115,85 @@ async function handleCoach(req, res) {
       .trim() || "No coaching text returned.";
 
   sendJson(res, { text, model });
+}
+
+async function handleSyncGet(req, res) {
+  let payload;
+  try {
+    payload = JSON.parse((await readBody(req)) || "{}");
+  } catch {
+    sendJson(res, { error: "Sync request must contain valid JSON." }, 400);
+    return;
+  }
+  const syncCode = String(payload.syncCode || "").trim();
+  if (syncCode.length < 12) {
+    sendJson(res, { error: "Use a sync code with at least 12 characters." }, 400);
+    return;
+  }
+
+  const collection = await getSyncCollection();
+  if (!collection) {
+    sendJson(res, { configured: false, error: "MongoDB is not configured on this server." }, 503);
+    return;
+  }
+
+  const record = await collection.findOne({ _id: hashSyncCode(syncCode) });
+  sendJson(res, { configured: true, data: record?.data || null, savedAt: record?.updatedAt || null });
+}
+
+async function handleSyncPut(req, res) {
+  let payload;
+  try {
+    payload = JSON.parse((await readBody(req)) || "{}");
+  } catch {
+    sendJson(res, { error: "Sync request must contain valid JSON." }, 400);
+    return;
+  }
+  const syncCode = String(payload.syncCode || "").trim();
+  if (!syncCode || syncCode.length < 12) {
+    sendJson(res, { error: "Use a sync code with at least 12 characters." }, 400);
+    return;
+  }
+  if (!payload.data || !Array.isArray(payload.data.days)) {
+    sendJson(res, { error: "Tracker data is invalid." }, 400);
+    return;
+  }
+
+  const collection = await getSyncCollection();
+  if (!collection) {
+    sendJson(res, { configured: false, error: "MongoDB is not configured on this server." }, 503);
+    return;
+  }
+
+  const updatedAt = new Date();
+  await collection.replaceOne(
+    { _id: hashSyncCode(syncCode) },
+    { _id: hashSyncCode(syncCode), data: payload.data, updatedAt },
+    { upsert: true },
+  );
+  sendJson(res, { configured: true, savedAt: updatedAt });
+}
+
+async function getSyncCollection() {
+  if (!mongoUri) return null;
+  if (!mongoPromise) {
+    mongoPromise = import("mongodb")
+      .then(({ MongoClient }) => {
+        mongoClient = new MongoClient(mongoUri);
+        return mongoClient.connect();
+      })
+      .catch((error) => {
+        console.error("Cloud sync is unavailable:", error.message);
+        return null;
+      });
+  }
+  const connection = await mongoPromise;
+  if (!connection || !mongoClient) return null;
+  return mongoClient.db(mongoDatabase).collection("tracker_snapshots");
+}
+
+function hashSyncCode(syncCode) {
+  return createHash("sha256").update(syncCode).digest("hex");
 }
 
 function buildPrompt(payload) {

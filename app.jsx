@@ -49,6 +49,8 @@ function App() {
   const [date, setDate] = useState("2026-09-07");
   const [data, setData] = useState(loadData);
   const [config, setConfig] = useState({ hasGeminiKey: false, model: "gemini-2.5-flash" });
+  const [syncCode, setSyncCode] = useState(() => localStorage.getItem("slice-life-ai:sync-code") || "");
+  const [syncStatus, setSyncStatus] = useState("");
   const [filter, setFilter] = useState("All");
   const [messages, setMessages] = useState([
     {
@@ -67,6 +69,10 @@ function App() {
       .then(setConfig)
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (syncCode) localStorage.setItem("slice-life-ai:sync-code", syncCode);
+  }, [syncCode]);
 
   const selectedDay = useMemo(() => ensureDay(data, date), [data, date]);
   const summary = useMemo(() => summarize(data, selectedDay), [data, selectedDay]);
@@ -154,6 +160,51 @@ function App() {
     setData(JSON.parse(await file.text()));
   }
 
+  async function saveToCloud() {
+    if (syncCode.trim().length < 12) {
+      setSyncStatus("Use a private sync code with at least 12 characters.");
+      return;
+    }
+    setSyncStatus("Saving...");
+    try {
+      const response = await fetch("/api/sync", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ syncCode: syncCode.trim(), data }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Cloud save failed.");
+      setSyncStatus(`Saved ${formatSavedAt(payload.savedAt)}.`);
+    } catch (error) {
+      setSyncStatus(error.message || "Cloud save failed.");
+    }
+  }
+
+  async function loadFromCloud() {
+    if (syncCode.trim().length < 12) {
+      setSyncStatus("Use the same 12+ character sync code.");
+      return;
+    }
+    setSyncStatus("Loading...");
+    try {
+      const response = await fetch("/api/sync/load", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ syncCode: syncCode.trim() }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Cloud load failed.");
+      if (!payload.data) {
+        setSyncStatus("No saved snapshot found.");
+        return;
+      }
+      setData(payload.data);
+      setSyncStatus(`Loaded ${formatSavedAt(payload.savedAt)}.`);
+    } catch (error) {
+      setSyncStatus(error.message || "Cloud load failed.");
+    }
+  }
+
   return (
     <div className="min-h-screen text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 lg:grid-cols-[268px_1fr]">
@@ -209,6 +260,25 @@ function App() {
               Import JSON
               <input hidden type="file" accept="application/json" onChange={importData} />
             </label>
+          </div>
+          <div className="app-sync mt-7 rounded-lg border border-line bg-white/75 p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-stone-500">Cloud save</span>
+              <span className={`h-2.5 w-2.5 rounded-full ${config.hasMongo ? "bg-moss" : "bg-amber"}`} />
+            </div>
+            <input
+              value={syncCode}
+              onChange={(event) => setSyncCode(event.target.value)}
+              placeholder="12+ character sync code"
+              className="mb-2 h-10 w-full rounded-md border border-line bg-white px-3 text-sm"
+              type="password"
+              autoComplete="off"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={saveToCloud} className="h-9 rounded-md bg-ink text-xs font-black text-white">Save</button>
+              <button onClick={loadFromCloud} className="h-9 rounded-md border border-line bg-white text-xs font-black">Load</button>
+            </div>
+            <p className="mt-2 text-xs leading-4 text-stone-600">{syncStatus || (config.hasMongo ? "Saved snapshots sync across devices." : "MongoDB is not connected yet.")}</p>
           </div>
         </aside>
 
@@ -785,6 +855,11 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatSavedAt(value) {
+  if (!value) return "now";
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
 ReactDOM.createRoot(document.getElementById("app")).render(<App />);
