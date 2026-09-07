@@ -1,6 +1,7 @@
 node_modules/
 .env
 .chrome-test*/
+.chrome-*/
 .edge-*/
 *.png
 !assets/sliceoflife-icon.png
