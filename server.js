@@ -219,7 +219,10 @@ async function getDatabase() {
   if (!mongoPromise) {
     mongoPromise = import("mongodb")
       .then(({ MongoClient }) => {
-        mongoClient = new MongoClient(mongoUri);
+        mongoClient = new MongoClient(mongoUri, {
+          serverSelectionTimeoutMS: 8000,
+          connectTimeoutMS: 8000,
+        });
         return mongoClient.connect();
       })
       .catch((error) => {
