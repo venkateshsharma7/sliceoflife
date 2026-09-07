@@ -864,8 +864,8 @@ function Spark({ values }) {
   );
 }
 
-function loadData() {
-  const saved = localStorage.getItem("slice-life-ai:react-v2") || localStorage.getItem("slice-life-ai:v1");
+function loadDataForUser(userId) {
+  const saved = localStorage.getItem(`slice-life-ai:tracker:${userId}`) || localStorage.getItem("slice-life-ai:react-v2") || localStorage.getItem("slice-life-ai:v1");
   if (saved) return JSON.parse(saved);
   const start = new Date(2026, 8, 7);
   return {
@@ -991,16 +991,6 @@ function formatDate(value) {
 function formatSavedAt(value) {
   if (!value) return "now";
   return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
-}
-
-function getDeviceSyncCode() {
-  const existing = localStorage.getItem("slice-life-ai:device-sync-code") || localStorage.getItem("slice-life-ai:sync-code");
-  if (existing && existing.length >= 12) return existing;
-  const generated = typeof globalThis.crypto?.randomUUID === "function"
-    ? globalThis.crypto.randomUUID()
-    : `slice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  localStorage.setItem("slice-life-ai:device-sync-code", generated);
-  return generated;
 }
 
 ReactDOM.createRoot(document.getElementById("app")).render(<App />);

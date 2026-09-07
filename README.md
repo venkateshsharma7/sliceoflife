@@ -42,7 +42,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.example.mongodb.net/?retryWr
 MONGODB_DATABASE=sliceoflife
 ```
 
-When MongoDB is connected, the app creates a private browser profile automatically, restores that browser's latest snapshot at startup, and saves changes shortly after every edit. No manual save action is needed.
+When MongoDB is connected, create an account to keep your tracker private. The app restores your account data at sign-in and saves changes shortly after every edit, on every device where you sign in.
 
 Then open:
 
