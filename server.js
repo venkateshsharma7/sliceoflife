@@ -65,9 +65,10 @@ createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/config" && req.method === "GET") {
+      const database = await getDatabase();
       sendJson(res, {
         hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
-        hasMongo: Boolean(mongoUri),
+        hasMongo: Boolean(database),
         model,
       });
       return;
@@ -223,6 +224,8 @@ async function getDatabase() {
       })
       .catch((error) => {
         console.error("Cloud sync is unavailable:", error.message);
+        mongoClient = null;
+        mongoPromise = null;
         return null;
       });
   }
