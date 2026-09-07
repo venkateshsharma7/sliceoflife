@@ -210,7 +210,7 @@ async function generateJudgmentImage(judgment) {
     const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/run/${modelPath}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${cloudflareApiToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, steps: 4, seed: Math.floor(Math.random() * 2_000_000_000) }),
+      body: JSON.stringify({ prompt, steps: 4 }),
     });
     if (!response.ok) {
       const body = await response.text();
