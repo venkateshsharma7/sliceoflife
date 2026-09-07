@@ -294,7 +294,13 @@ function TrackerApp({ auth, onSignOut }) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({ day: selectedDay }),
       });
-      const payload = await response.json();
+      const raw = await response.text();
+      let payload;
+      try {
+        payload = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(response.status === 404 ? "Daily verdict is deploying. Try again in a minute." : "Daily verdict service is temporarily unavailable.");
+      }
       if (!response.ok) throw new Error(payload.error || "Today's verdict could not be created.");
       updateDay({ judgment: payload.judgment });
       setJudgmentStatus("Verdict saved for this date.");
