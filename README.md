@@ -12,7 +12,15 @@ A clean local-first app replacing the original workbook tracker with:
 - Optional cross-device cloud save
 - Gemini-powered AI coach through a local Node server
 
-## Run
+## Deployment
+
+The React frontend is deployed to Netlify. Netlify forwards all `/api/*` requests to the Render backend, so the Gemini key and MongoDB URI remain server-side.
+
+1. In Netlify, choose **Add new project**, import `venkateshsharma7/sliceoflife`, and deploy with the repository defaults. The included `netlify.toml` publishes this frontend and proxies API calls to Render.
+2. Keep the Render web service connected to the same repository. It runs the Node API.
+3. In Render Environment, add `MONGODB_URI` and paste your MongoDB connection string. `MONGODB_DATABASE` is already set to `sliceoflife`.
+
+## Local Run
 
 ```powershell
 cd C:\DeVeLoPeR\slice-life-ai-app
