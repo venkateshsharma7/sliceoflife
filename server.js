@@ -200,8 +200,8 @@ async function handleJudgment(req, res) {
 async function generateJudgmentImage(judgment) {
   if (!cloudflareAccountId || !cloudflareApiToken) return { imageDataUrl: null, imageError: null };
   const prompt = [
-    "Original fictional night-shift analyst portrait for a premium habit tracker.",
-    "Cinematic noir editorial photography, restrained forensic office, charcoal coat, serious observant expression, dramatic side lighting, rich film grain, deep shadow, warm practical lamp, modern premium app artwork.",
+    "Original fictional courtroom judge character portrait for a playful habit tracker app.",
+    "Comedic editorial illustration, exaggerated cartoonish caricature style, oversized wig or robe, wildly exaggerated theatrical facial expression reacting to a verdict, raised gavel mid-slam, bold saturated studio lighting, punchy colors, thick expressive line work, modern premium app artwork.",
     `Emotional direction: ${judgment.title}. ${judgment.line}`,
     "No celebrity, no existing fictional character, no resemblance to a real person, no weapons, no text, no logos, no watermark.",
   ].join(" ");
