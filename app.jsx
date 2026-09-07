@@ -48,7 +48,7 @@ function App() {
   const [view, setView] = useState("dashboard");
   const [date, setDate] = useState("2026-09-07");
   const [data, setData] = useState(loadData);
-  const [config, setConfig] = useState({ hasGeminiKey: false, model: "gemini-2.5-flash" });
+  const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
   const [syncCode, setSyncCode] = useState(() => localStorage.getItem("slice-life-ai:sync-code") || "");
   const [syncStatus, setSyncStatus] = useState("");
   const [filter, setFilter] = useState("All");
@@ -64,10 +64,25 @@ function App() {
   }, [data]);
 
   useEffect(() => {
-    fetch("/api/config")
-      .then((res) => res.json())
-      .then(setConfig)
-      .catch(() => {});
+    let active = true;
+    let retryTimer;
+
+    async function loadConfig() {
+      try {
+        const response = await fetch("/api/config");
+        if (!response.ok) throw new Error("Configuration request failed.");
+        const nextConfig = await response.json();
+        if (active) setConfig(nextConfig);
+      } catch {
+        if (active) retryTimer = window.setTimeout(loadConfig, 5000);
+      }
+    }
+
+    loadConfig();
+    return () => {
+      active = false;
+      window.clearTimeout(retryTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -248,7 +263,11 @@ function App() {
               <span className={`h-2.5 w-2.5 rounded-full ${config.hasGeminiKey ? "bg-moss" : "bg-amber"}`} />
             </div>
             <p className="text-xs leading-5 text-stone-600">
-              {config.hasGeminiKey ? `Connected to ${config.model}` : "Add .env to activate AI coaching."}
+              {config.hasGeminiKey === null
+                ? "Checking AI connection..."
+                : config.hasGeminiKey
+                  ? `Connected to ${config.model}`
+                  : "Add .env to activate AI coaching."}
             </p>
           </div>
 
@@ -538,7 +557,7 @@ function Coach({ messages, askCoach, config }) {
 
   return (
     <section className="grid gap-4 xl:grid-cols-[340px_1fr]">
-      <Panel title="Coach modes" action={config.hasGeminiKey ? config.model : "offline"}>
+      <Panel title="Coach modes" action={config.hasGeminiKey === null ? "checking" : config.hasGeminiKey ? config.model : "offline"}>
         <div className="grid gap-2">
           {[
             "Build my exact plan for the next 24 hours.",
