@@ -148,7 +148,8 @@ function TrackerApp({ auth, onSignOut }) {
   const [view, setView] = useState("dashboard");
   const [date, setDate] = useState(() => isoDate(new Date()));
   const [data, setData] = useState(() => loadDataForUser(auth.user.id));
-  const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
+  const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, hasCloudflareKeys: null, model: "gemini-2.5-flash" });
+  const [cloudflareCheck, setCloudflareCheck] = useState({ state: "idle", message: "" });
   const [cloudReady, setCloudReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Checking cloud backup...");
   const [judgmentStatus, setJudgmentStatus] = useState("");
@@ -285,6 +286,20 @@ function TrackerApp({ auth, onSignOut }) {
     });
   }
 
+  async function testCloudflare() {
+    setCloudflareCheck({ state: "checking", message: "Checking Cloudflare..." });
+    try {
+      const response = await fetch("/api/cloudflare/status");
+      const payload = await response.json();
+      setCloudflareCheck({
+        state: payload.working ? "working" : payload.configured ? "broken" : "unconfigured",
+        message: payload.message || (payload.working ? "Connected." : "Not working."),
+      });
+    } catch (error) {
+      setCloudflareCheck({ state: "broken", message: error.message || "Could not reach the local server." });
+    }
+  }
+
   async function saveDailyNotes() {
     setJudging(true);
     setJudgmentStatus("Reviewing your day...");
@@ -409,6 +424,39 @@ function TrackerApp({ auth, onSignOut }) {
                   ? `Connected to ${config.model}`
                   : "Add .env to activate AI coaching."}
             </p>
+          </div>
+
+          <div className="app-cloudflare mt-3 rounded-lg border border-line bg-white/75 p-3">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-stone-500">Cloudflare AI</span>
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  cloudflareCheck.state === "working"
+                    ? "bg-moss"
+                    : cloudflareCheck.state === "broken"
+                      ? "bg-clay"
+                      : config.hasCloudflareKeys
+                        ? "bg-amber"
+                        : "bg-stone-400"
+                }`}
+              />
+            </div>
+            <p className="text-xs leading-5 text-stone-600">
+              {cloudflareCheck.state !== "idle"
+                ? cloudflareCheck.message
+                : config.hasCloudflareKeys === null
+                  ? "Checking configuration..."
+                  : config.hasCloudflareKeys
+                    ? "Keys found. Run a test to confirm it's live."
+                    : "Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN for AI portraits."}
+            </p>
+            <button
+              onClick={testCloudflare}
+              disabled={cloudflareCheck.state === "checking"}
+              className="mt-3 h-9 w-full rounded-md border border-line bg-white text-xs font-black disabled:opacity-60"
+            >
+              {cloudflareCheck.state === "checking" ? "Checking..." : "Test connection"}
+            </button>
           </div>
 
           <div className="app-account mt-3 rounded-lg border border-line bg-white/75 p-3">

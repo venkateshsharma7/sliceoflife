@@ -77,8 +77,14 @@ createServer(async (req, res) => {
       sendJson(res, {
         hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
         hasMongo: Boolean(database),
+        hasCloudflareKeys: Boolean(cloudflareAccountId && cloudflareApiToken),
         model,
       });
+      return;
+    }
+
+    if (url.pathname === "/api/cloudflare/status" && req.method === "GET") {
+      await handleCloudflareStatus(req, res);
       return;
     }
 
@@ -214,6 +220,49 @@ async function generateJudgmentImage(judgment) {
   } catch (error) {
     console.error("Daily image generation failed:", error.message);
     return null;
+  }
+}
+
+async function handleCloudflareStatus(req, res) {
+  if (!cloudflareAccountId || !cloudflareApiToken) {
+    sendJson(res, {
+      configured: false,
+      working: false,
+      message: "Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN to enable AI-generated daily portraits.",
+    });
+    return;
+  }
+
+  try {
+    // A lightweight, read-only call that confirms the account ID and token are
+    // valid without spending any Workers AI image-generation quota.
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(cloudflareAccountId)}/ai/models/search?search=${encodeURIComponent(cloudflareImageModel)}`,
+      { headers: { Authorization: `Bearer ${cloudflareApiToken}` } },
+    );
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || payload?.success === false) {
+      const detail = payload?.errors?.[0]?.message || `Cloudflare responded with status ${response.status}.`;
+      sendJson(res, { configured: true, working: false, message: detail });
+      return;
+    }
+
+    const modelFound = Array.isArray(payload?.result) && payload.result.length > 0;
+    sendJson(res, {
+      configured: true,
+      working: true,
+      model: cloudflareImageModel,
+      message: modelFound
+        ? "Cloudflare Workers AI is connected and the image model is available."
+        : "Cloudflare Workers AI is connected, but the configured model could not be found in the catalog.",
+    });
+  } catch (error) {
+    sendJson(res, {
+      configured: true,
+      working: false,
+      message: `Could not reach Cloudflare: ${error.message || "unknown network error"}.`,
+    });
   }
 }
 
