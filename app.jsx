@@ -151,6 +151,8 @@ function TrackerApp({ auth, onSignOut }) {
   const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
   const [cloudReady, setCloudReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Checking cloud backup...");
+  const [judgmentStatus, setJudgmentStatus] = useState("");
+  const [judging, setJudging] = useState(false);
   const [filter, setFilter] = useState("All");
   const [messages, setMessages] = useState([
     {
@@ -283,6 +285,26 @@ function TrackerApp({ auth, onSignOut }) {
     });
   }
 
+  async function saveDailyNotes() {
+    setJudging(true);
+    setJudgmentStatus("Reviewing your day...");
+    try {
+      const response = await fetch("/api/judgment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ day: selectedDay }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Today's verdict could not be created.");
+      updateDay({ judgment: payload.judgment });
+      setJudgmentStatus("Verdict saved for this date.");
+    } catch (error) {
+      setJudgmentStatus(error.message || "Today's verdict could not be created.");
+    } finally {
+      setJudging(false);
+    }
+  }
+
   async function askCoach(prompt) {
     const text = prompt?.trim();
     if (!text) return;
@@ -413,7 +435,7 @@ function TrackerApp({ auth, onSignOut }) {
         <main className="min-w-0 p-4 sm:p-6 lg:p-8">
           <Header view={view} date={date} setDate={chooseDate} selectedDay={selectedDay} summary={summary} askCoach={askCoach} onSave={() => saveToCloud()} />
           {view === "dashboard" && <Dashboard summary={summary} selectedDay={selectedDay} askCoach={askCoach} />}
-          {view === "today" && <Today selectedDay={selectedDay} setHabit={setHabit} updateDay={updateDay} />}
+          {view === "today" && <Today selectedDay={selectedDay} setHabit={setHabit} updateDay={updateDay} onSaveNotes={saveDailyNotes} judging={judging} judgmentStatus={judgmentStatus} />}
           {view === "habits" && <Habits summary={summary} filter={filter} setFilter={setFilter} />}
           {view === "coach" && <Coach messages={messages} askCoach={askCoach} config={config} />}
           {view === "review" && <Review rows={summary.habitRates} />}
@@ -543,7 +565,7 @@ function Dashboard({ summary, selectedDay, askCoach }) {
   );
 }
 
-function Today({ selectedDay, setHabit, updateDay }) {
+function Today({ selectedDay, setHabit, updateDay, onSaveNotes, judging, judgmentStatus }) {
   return (
       <section className="today-view grid gap-4 xl:grid-cols-[1fr_360px]">
       <Panel title="Daily board" action="23 habits">
@@ -585,43 +607,69 @@ function Today({ selectedDay, setHabit, updateDay }) {
         </div>
       </Panel>
 
-      <Panel title="Scorecard" action={rank(scoreDay(selectedDay))}>
-        <div className="mb-5">
-          <div className="text-7xl font-black">{scoreDay(selectedDay).toFixed(1)}</div>
-          <p className="mt-1 text-sm font-medium text-stone-600">Max practical score is about 26.</p>
-        </div>
-        <div className="space-y-4">
-          <Field label="Screen time hours">
-            <input
-              type="number"
-              min="0"
-              max="24"
-              step="0.5"
-              value={selectedDay.screenTime}
-              onChange={(event) => updateDay({ screenTime: event.target.value })}
-              className="h-11 w-full rounded-md border border-line bg-white px-3"
-            />
-          </Field>
-          <Field label="Spend Rs">
-            <input
-              type="number"
-              min="0"
-              value={selectedDay.spend}
-              onChange={(event) => updateDay({ spend: Number(event.target.value || 0) })}
-              className="h-11 w-full rounded-md border border-line bg-white px-3"
-            />
-          </Field>
-          <Field label="Field notes">
-            <textarea
-              value={selectedDay.notes}
-              onChange={(event) => updateDay({ notes: event.target.value })}
-              placeholder="One honest line from today"
-              className="min-h-32 w-full resize-y rounded-md border border-line bg-white p-3"
-            />
-          </Field>
-        </div>
-      </Panel>
+      <div className="grid gap-4">
+        <DailyJudgment day={selectedDay} judging={judging} status={judgmentStatus} />
+        <Panel title="Scorecard" action={rank(scoreDay(selectedDay))}>
+          <div className="mb-5">
+            <div className="text-7xl font-black">{scoreDay(selectedDay).toFixed(1)}</div>
+            <p className="mt-1 text-sm font-medium text-stone-600">Max practical score is about 26.</p>
+          </div>
+          <div className="space-y-4">
+            <Field label="Screen time hours">
+              <input type="number" min="0" max="24" step="0.5" value={selectedDay.screenTime} onChange={(event) => updateDay({ screenTime: event.target.value })} className="h-11 w-full rounded-md border border-line bg-white px-3" />
+            </Field>
+            <Field label="Spend Rs">
+              <input type="number" min="0" value={selectedDay.spend} onChange={(event) => updateDay({ spend: Number(event.target.value || 0) })} className="h-11 w-full rounded-md border border-line bg-white px-3" />
+            </Field>
+            <Field label="Field notes">
+              <textarea value={selectedDay.notes} onChange={(event) => updateDay({ notes: event.target.value })} placeholder="One honest line from today" className="min-h-32 w-full resize-y rounded-md border border-line bg-white p-3" />
+            </Field>
+            <button onClick={onSaveNotes} disabled={judging} className="h-11 w-full rounded-md bg-ink text-sm font-black text-white disabled:opacity-60">{judging ? "Reviewing the record..." : "Save notes and get verdict"}</button>
+          </div>
+        </Panel>
+      </div>
     </section>
+  );
+}
+
+function DailyJudgment({ day, judging, status }) {
+  const judgment = day.judgment;
+  const tone = judgment?.tone || "lake";
+  const colors = {
+    moss: "from-[#213a2a] to-[#0f1712] border-moss/50",
+    amber: "from-[#3d2d12] to-[#17120a] border-amber/50",
+    clay: "from-[#421e19] to-[#1b0f0d] border-clay/50",
+    lake: "from-[#132f3b] to-[#0d1418] border-lake/50",
+  };
+  return (
+    <section className={`overflow-hidden rounded-lg border bg-gradient-to-br ${colors[tone]}`}>
+      <div className="grid min-h-52 grid-cols-[132px_1fr] gap-3 p-4">
+        <JudgmentPortrait tone={tone} />
+        <div className="min-w-0 self-center">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-white/60">Daily judgment</p>
+          <h3 className="mt-2 text-xl font-black leading-6 text-white">{judging ? "Reading the evidence..." : judgment?.title || "The day awaits a record."}</h3>
+          <p className="mt-3 text-sm leading-6 text-white/75">{judging ? "Notes, habits, screen time, and spend are being reviewed." : judgment?.line || "Save your notes when the day is ready. Your verdict will stay with this calendar date."}</p>
+          {(judgment || status) && <p className="mt-3 text-xs font-bold text-white/55">{judgment ? `Recorded ${formatSavedAt(judgment.createdAt)}` : status}</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function JudgmentPortrait({ tone }) {
+  const accent = { moss: "#83b38c", amber: "#e0ad57", clay: "#e17e68", lake: "#7db6cf" }[tone];
+  return (
+    <svg viewBox="0 0 160 200" className="h-full w-full" role="img" aria-label="Fictional night-shift analyst portrait">
+      <rect width="160" height="200" rx="10" fill="#101417" />
+      <path d="M0 160C28 126 48 114 80 114s54 13 80 46v40H0Z" fill="#202b2d" />
+      <path d="M43 118c-4-39 7-76 37-76 33 0 42 37 37 76-10 18-62 18-74 0Z" fill="#d2a082" />
+      <path d="M40 89c1-44 21-66 43-66 31 0 40 32 37 65-10-18-24-27-43-27-16 0-29 9-37 28Z" fill="#111417" />
+      <path d="M51 99c9 5 18 7 29 7s21-2 30-7" fill="none" stroke="#38231c" strokeWidth="3" strokeLinecap="round" />
+      <path d="M55 79h18M88 79h18" stroke="#111417" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="64" cy="79" r="2" fill={accent} /><circle cx="97" cy="79" r="2" fill={accent} />
+      <path d="M26 33 58 8M112 8l24 31" stroke={accent} strokeOpacity=".5" strokeWidth="2" />
+      <text x="14" y="181" fill={accent} fontSize="10" fontWeight="700" letterSpacing="2">CASE FILE</text>
+    </svg>
   );
 }
 
