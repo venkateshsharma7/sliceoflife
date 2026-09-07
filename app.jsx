@@ -146,7 +146,7 @@ function AuthScreen({ onAuthenticated }) {
 
 function TrackerApp({ auth, onSignOut }) {
   const [view, setView] = useState("dashboard");
-  const [date, setDate] = useState("2026-09-07");
+  const [date, setDate] = useState(() => isoDate(new Date()));
   const [data, setData] = useState(() => loadDataForUser(auth.user.id));
   const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
   const [cloudReady, setCloudReady] = useState(false);
@@ -994,8 +994,9 @@ function scoreDay(day) {
 }
 
 function screenScore(hours) {
+  if (hours === "" || hours === null || hours === undefined) return 0;
   const value = Number(hours);
-  if (!value) return 0;
+  if (!Number.isFinite(value)) return 0;
   if (value <= 2) return 2;
   if (value <= 4) return 1;
   if (value <= 6) return 0;

@@ -23,7 +23,7 @@ The React frontend is deployed to Netlify. Netlify forwards all `/api/*` request
 ## Local Run
 
 ```powershell
-cd C:\DeVeLoPeR\slice-life-ai-app
+cd path\to\sliceoflife
 copy .env.example .env
 npm.cmd start
 ```
