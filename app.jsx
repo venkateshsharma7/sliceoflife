@@ -78,7 +78,7 @@ function App() {
 }
 
 function AuthLoading() {
-  return <div className="grid min-h-screen place-items-center text-sm font-black text-stone-500">Loading your workspace...</div>;
+  return <div className="grid min-h-screen place-items-center text-sm font-black text-[#c8cdd1]">Loading your workspace...</div>;
 }
 
 function AuthScreen({ onAuthenticated }) {
@@ -111,30 +111,33 @@ function AuthScreen({ onAuthenticated }) {
 
   const registering = mode === "register";
   return (
-    <main className="mx-auto grid min-h-screen max-w-[1180px] items-center gap-10 px-5 py-10 lg:grid-cols-[1.15fr_.85fr] lg:px-10">
+    <main className="mx-auto grid min-h-screen max-w-[1180px] items-center gap-10 px-5 py-10 text-ink lg:grid-cols-[1.15fr_.85fr] lg:px-10">
       <section className="max-w-xl">
         <div className="mb-8 flex items-center gap-3">
           <img src="./assets/sliceoflife-icon.png" alt="Slice of Life" className="h-12 w-12 rounded-lg" />
-          <div><h1 className="text-xl font-black">Slice of Life</h1><p className="text-sm text-stone-500">Your personal operating system</p></div>
+          <div><h1 className="text-xl font-black text-[#f2f4f5]">Slice of Life</h1><p className="text-sm text-[#b7c0c6]">Your personal operating system</p></div>
         </div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-clay">Personal progress, properly kept</p>
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-[#f28a6d]">Personal progress, properly kept</p>
         <h2 className="mt-4 text-5xl font-black leading-[1.02] text-ink sm:text-6xl">One life.<br />A clearer record.</h2>
-        <p className="mt-6 max-w-md text-base leading-7 text-stone-600">Track habits, recovery, study, and spending in one focused place. Your account keeps your progress available wherever you sign in.</p>
-        <div className="mt-10 grid grid-cols-3 gap-3 text-xs font-bold text-stone-500"><span>PRIVATE ACCOUNT</span><span>LIVE SYNC</span><span>AI COACH</span></div>
+        <p className="mt-6 max-w-md text-base leading-7 text-[#c8cdd1]">Track habits, recovery, study, and spending in one focused place. Your account keeps your progress available wherever you sign in.</p>
+        <div className="mt-10 grid max-w-md grid-cols-3 gap-3">
+          {["Private account", "Live sync", "AI coach"].map((item) => <span key={item} className="border-t border-line pt-3 text-xs font-black uppercase tracking-wide text-[#b7c0c6]">{item}</span>)}
+        </div>
       </section>
 
-      <section className="rounded-xl border border-line bg-paper/90 p-5 shadow-2xl shadow-black/20 sm:p-8">
-        <div className="mb-7 flex rounded-md border border-line bg-fog p-1">
-          {["login", "register"].map((option) => <button key={option} onClick={() => { setMode(option); setStatus(""); }} className={`h-10 flex-1 rounded text-sm font-black capitalize ${mode === option ? "bg-white text-ink shadow-sm" : "text-stone-500"}`}>{option === "login" ? "Sign in" : "Create account"}</button>)}
+      <section className="rounded-xl border border-[#384047] bg-[#101418]/95 p-5 shadow-2xl shadow-black/35 sm:p-8">
+        <div className="mb-7 flex rounded-md border border-[#384047] bg-[#181d22] p-1">
+          {["login", "register"].map((option) => <button key={option} onClick={() => { setMode(option); setStatus(""); }} className={`h-11 flex-1 rounded text-sm font-black ${mode === option ? "bg-[#f2f4f5] text-[#101418] shadow-sm" : "text-[#c8cdd1] hover:bg-[#242a30]"}`}>{option === "login" ? "Sign in" : "Create account"}</button>)}
         </div>
-        <h3 className="text-2xl font-black">{registering ? "Create your account" : "Welcome back"}</h3>
-        <p className="mt-2 text-sm text-stone-500">{registering ? "Your tracker will follow you across devices." : "Sign in to pick up exactly where you left off."}</p>
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-[#f28a6d]">Slice of Life account</p>
+        <h3 className="mt-3 text-3xl font-black text-[#f2f4f5]">{registering ? "Create your account" : "Welcome back"}</h3>
+        <p className="mt-2 text-sm leading-6 text-[#c8cdd1]">{registering ? "Your tracker will follow you across devices." : "Sign in to pick up exactly where you left off."}</p>
         <form onSubmit={submit} className="mt-7 grid gap-4">
-          {registering && <label className="grid gap-2 text-sm font-bold">Name<input required value={name} onChange={(event) => setName(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="Your name" /></label>}
-          <label className="grid gap-2 text-sm font-bold">Email<input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="you@example.com" /></label>
-          <label className="grid gap-2 text-sm font-bold">Password<input required minLength="8" type="password" autoComplete={registering ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} className="h-12 rounded-md border border-line bg-white px-3 font-medium" placeholder="At least 8 characters" /></label>
+          {registering && <label className="grid gap-2 text-sm font-black text-[#f2f4f5]">Name<input required value={name} onChange={(event) => setName(event.target.value)} className="h-12 rounded-md border border-[#384047] bg-[#1b2025] px-3 font-medium text-[#f2f4f5]" placeholder="Your name" /></label>}
+          <label className="grid gap-2 text-sm font-black text-[#f2f4f5]">Email<input required type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="h-12 rounded-md border border-[#384047] bg-[#1b2025] px-3 font-medium text-[#f2f4f5]" placeholder="you@example.com" /></label>
+          <label className="grid gap-2 text-sm font-black text-[#f2f4f5]">Password<input required minLength="8" type="password" autoComplete={registering ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} className="h-12 rounded-md border border-[#384047] bg-[#1b2025] px-3 font-medium text-[#f2f4f5]" placeholder="At least 8 characters" /></label>
           {status && <p className="rounded-md border border-clay/40 bg-clay/10 p-3 text-sm text-clay">{status}</p>}
-          <button disabled={busy} className="mt-2 h-12 rounded-md bg-ink text-sm font-black text-white disabled:opacity-60">{busy ? "Please wait..." : registering ? "Create account" : "Sign in"}</button>
+          <button disabled={busy} className="mt-2 h-12 rounded-md bg-[#f2f4f5] text-sm font-black text-[#101418] transition hover:bg-[#dfe3e5] disabled:opacity-60">{busy ? "Please wait..." : registering ? "Create account" : "Sign in"}</button>
         </form>
       </section>
     </main>
