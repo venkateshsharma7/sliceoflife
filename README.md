@@ -9,7 +9,7 @@ A clean local-first app replacing the original workbook tracker with:
 - Weekly review
 - Reward protocol
 - JSON import/export
-- Optional cross-device cloud save
+- Optional automatic cloud backup
 - Gemini-powered AI coach through a local Node server
 
 ## Deployment
@@ -42,7 +42,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.example.mongodb.net/?retryWr
 MONGODB_DATABASE=sliceoflife
 ```
 
-Use the same 12+ character sync code on each device. The app stores only a SHA-256 hash of that code as the snapshot identifier; choose a unique passphrase and do not reuse a password.
+When MongoDB is connected, the app creates a private browser profile automatically, restores that browser's latest snapshot at startup, and saves changes shortly after every edit. No manual save action is needed.
 
 Then open:
 

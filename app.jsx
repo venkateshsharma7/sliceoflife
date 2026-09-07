@@ -49,8 +49,9 @@ function App() {
   const [date, setDate] = useState("2026-09-07");
   const [data, setData] = useState(loadData);
   const [config, setConfig] = useState({ hasGeminiKey: null, hasMongo: null, model: "gemini-2.5-flash" });
-  const [syncCode, setSyncCode] = useState(() => localStorage.getItem("slice-life-ai:sync-code") || "");
-  const [syncStatus, setSyncStatus] = useState("");
+  const [deviceSyncCode] = useState(getDeviceSyncCode);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState("Checking cloud backup...");
   const [filter, setFilter] = useState("All");
   const [messages, setMessages] = useState([
     {
@@ -86,8 +87,59 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (syncCode) localStorage.setItem("slice-life-ai:sync-code", syncCode);
-  }, [syncCode]);
+    if (config.hasMongo !== true) {
+      setCloudReady(false);
+      setSyncStatus(config.hasMongo === false ? "Cloud backup is unavailable." : "Checking cloud backup...");
+      return;
+    }
+
+    let active = true;
+    async function restoreCloudData() {
+      setSyncStatus("Syncing your tracker...");
+      try {
+        const response = await fetch("/api/sync/load", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ syncCode: deviceSyncCode }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Cloud sync failed.");
+        if (!active) return;
+        if (payload.data) setData(payload.data);
+        setCloudReady(true);
+        setSyncStatus(payload.data ? `Synced ${formatSavedAt(payload.savedAt)}.` : "Auto-save is ready.");
+      } catch (error) {
+        if (active) setSyncStatus(error.message || "Cloud sync failed.");
+      }
+    }
+
+    restoreCloudData();
+    return () => {
+      active = false;
+    };
+  }, [config.hasMongo, deviceSyncCode]);
+
+  useEffect(() => {
+    if (!cloudReady || config.hasMongo !== true) return;
+
+    const saveTimer = window.setTimeout(async () => {
+      setSyncStatus("Saving changes...");
+      try {
+        const response = await fetch("/api/sync", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ syncCode: deviceSyncCode, data }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Cloud save failed.");
+        setSyncStatus(`Saved ${formatSavedAt(payload.savedAt)}.`);
+      } catch (error) {
+        setSyncStatus(error.message || "Cloud save failed.");
+      }
+    }, 900);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [cloudReady, config.hasMongo, data, deviceSyncCode]);
 
   const selectedDay = useMemo(() => ensureDay(data, date), [data, date]);
   const summary = useMemo(() => summarize(data, selectedDay), [data, selectedDay]);
@@ -175,51 +227,6 @@ function App() {
     setData(JSON.parse(await file.text()));
   }
 
-  async function saveToCloud() {
-    if (syncCode.trim().length < 12) {
-      setSyncStatus("Use a private sync code with at least 12 characters.");
-      return;
-    }
-    setSyncStatus("Saving...");
-    try {
-      const response = await fetch("/api/sync", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ syncCode: syncCode.trim(), data }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Cloud save failed.");
-      setSyncStatus(`Saved ${formatSavedAt(payload.savedAt)}.`);
-    } catch (error) {
-      setSyncStatus(error.message || "Cloud save failed.");
-    }
-  }
-
-  async function loadFromCloud() {
-    if (syncCode.trim().length < 12) {
-      setSyncStatus("Use the same 12+ character sync code.");
-      return;
-    }
-    setSyncStatus("Loading...");
-    try {
-      const response = await fetch("/api/sync/load", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ syncCode: syncCode.trim() }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Cloud load failed.");
-      if (!payload.data) {
-        setSyncStatus("No saved snapshot found.");
-        return;
-      }
-      setData(payload.data);
-      setSyncStatus(`Loaded ${formatSavedAt(payload.savedAt)}.`);
-    } catch (error) {
-      setSyncStatus(error.message || "Cloud load failed.");
-    }
-  }
-
   return (
     <div className="min-h-screen text-ink">
       <div className="mx-auto grid min-h-screen max-w-[1500px] grid-cols-1 lg:grid-cols-[268px_1fr]">
@@ -282,22 +289,10 @@ function App() {
           </div>
           <div className="app-sync mt-7 rounded-lg border border-line bg-white/75 p-3">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-black uppercase text-stone-500">Cloud save</span>
-              <span className={`h-2.5 w-2.5 rounded-full ${config.hasMongo ? "bg-moss" : "bg-amber"}`} />
+              <span className="text-xs font-black uppercase text-stone-500">Auto-save</span>
+              <span className={`h-2.5 w-2.5 rounded-full ${cloudReady ? "bg-moss" : "bg-amber"}`} />
             </div>
-            <input
-              value={syncCode}
-              onChange={(event) => setSyncCode(event.target.value)}
-              placeholder="12+ character sync code"
-              className="mb-2 h-10 w-full rounded-md border border-line bg-white px-3 text-sm"
-              type="password"
-              autoComplete="off"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={saveToCloud} className="h-9 rounded-md bg-ink text-xs font-black text-white">Save</button>
-              <button onClick={loadFromCloud} className="h-9 rounded-md border border-line bg-white text-xs font-black">Load</button>
-            </div>
-            <p className="mt-2 text-xs leading-4 text-stone-600">{syncStatus || (config.hasMongo ? "Saved snapshots sync across devices." : "MongoDB is not connected yet.")}</p>
+            <p className="text-xs leading-5 text-stone-600">{syncStatus}</p>
           </div>
         </aside>
 
@@ -879,6 +874,16 @@ function formatDate(value) {
 function formatSavedAt(value) {
   if (!value) return "now";
   return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function getDeviceSyncCode() {
+  const existing = localStorage.getItem("slice-life-ai:device-sync-code") || localStorage.getItem("slice-life-ai:sync-code");
+  if (existing && existing.length >= 12) return existing;
+  const generated = typeof globalThis.crypto?.randomUUID === "function"
+    ? globalThis.crypto.randomUUID()
+    : `slice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem("slice-life-ai:device-sync-code", generated);
+  return generated;
 }
 
 ReactDOM.createRoot(document.getElementById("app")).render(<App />);
